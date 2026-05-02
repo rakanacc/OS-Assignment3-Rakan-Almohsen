@@ -14,7 +14,7 @@
 > Set sharing to "Anyone with the link can view".
 > Test the link in incognito/private mode before submitting.
 
-**Video Link**: [PASTE GOOGLE DRIVE LINK HERE]
+**Video Link**: [https://drive.google.com/file/d/1Ro5e2Pva4ihC09mLtjrPG8Pv0Io6Yeux/view?usp=drive_link]
 
 **Video filename**: `443050277_Assignment3_Synchronization.mp4`
 
@@ -357,12 +357,13 @@ Semaphores limit how many threads can access a resource.
 
 **Repository URL**: [https://github.com/rakanacc/OS-Assignment3-Rakan-Almohsen.git]
 
-**Number of commits**: 1
+**Number of commits**: 3
 
 **Commit messages**:
 
 1. student ID change, added locks, added semaphore, completed documentation
-
+2. student ID change, added locks, added semaphore, completed documentation
+3. ⁠screen record
 ---
 
 ## Summary
