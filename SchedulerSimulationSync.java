@@ -5,7 +5,9 @@ import java.util.HashMap;
 import java.util.Random;
 import java.util.ArrayList;
 import java.util.List;
-
+//new imports*
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.Semaphore;
 // ANSI Color Codes for enhanced terminal output
 class Colors {
     public static final String RESET = "\u001B[0m";
@@ -35,7 +37,15 @@ class SharedResources {
     public static int completedProcessCount = 0;   // Shared counter - NEEDS PROTECTION!
     public static long totalWaitingTime = 0;       // Shared accumulator - NEEDS PROTECTION!
     public static List<String> executionLog = new ArrayList<>();  // Shared list - NEEDS PROTECTION!
-    
+    //new Locks and Semaphore*
+    // 🔐 Locks
+public static final ReentrantLock contextLock = new ReentrantLock();
+public static final ReentrantLock completedLock = new ReentrantLock();
+public static final ReentrantLock waitingLock = new ReentrantLock();
+public static final ReentrantLock logLock = new ReentrantLock();
+
+// 🚦 Semaphore
+public static final Semaphore cpuSemaphore = new Semaphore(1);
     // TODO #1: Add a ReentrantLock(s) here to protect critical sections
     // Example: public static final ReentrantLock lock = new ReentrantLock();
     
@@ -43,30 +53,47 @@ class SharedResources {
     // Example: public static final Semaphore cpuSemaphore = new Semaphore(1);
     
     // Method to increment context switch counter
-    public static void incrementContextSwitch() {
-        // TODO: Protect this critical section with a lock
-        // RACE CONDITION: Multiple threads might read and write simultaneously!
+    // تعديل الفنكشن
+   public static void incrementContextSwitch() {
+    contextLock.lock();
+    try {
         contextSwitchCount++;
+    } finally {
+        contextLock.unlock();
     }
+}
     
     // Method to increment completed process counter
+    // تعديل الفنكشن
     public static void incrementCompletedProcess() {
-        // TODO: Protect this critical section with a lock
+    completedLock.lock();
+    try {
         completedProcessCount++;
+    } finally {
+        completedLock.unlock();
     }
-    
+}
     // Method to add waiting time
+     // تعديل الفنكشن
     public static void addWaitingTime(long time) {
-        // TODO: Protect this critical section with a lock
+    waitingLock.lock();
+    try {
         totalWaitingTime += time;
+    } finally {
+        waitingLock.unlock();
     }
+}
     
     // Method to log execution
+     // تعديل الفنكشن
     public static void logExecution(String message) {
-        // TODO: Protect this critical section with a lock
-        // RACE CONDITION: ArrayList is not thread-safe!
+    logLock.lock();
+    try {
         executionLog.add(message);
+    } finally {
+        logLock.unlock();
     }
+}
 }
 
 // Class representing a process that implements Runnable to be run by a thread
@@ -92,9 +119,8 @@ class Process implements Runnable {
     
     @Override
     public void run() {
-        // TODO #3: Acquire CPU semaphore before executing
-        // This ensures only allowed number of processes run simultaneously
-        
+        //new in run function
+       SharedResources.cpuSemaphore.acquire();
         try {
             if (startTime == -1) {
                 startTime = System.currentTimeMillis();
@@ -106,7 +132,7 @@ class Process implements Runnable {
             int runTime = Math.min(timeQuantum, remainingTime);
             
             String quantumBar = createProgressBar(0, 15);
-            String message = "  ▶ " + name + " (Priority: " + priority + ") executing quantum [" + runTime + "ms]";
+            String message = "  ▶️ " + name + " (Priority: " + priority + ") executing quantum [" + runTime + "ms]";
             System.out.println(Colors.BRIGHT_GREEN + message + Colors.RESET);
             
             // Log execution
@@ -153,10 +179,9 @@ class Process implements Runnable {
                                   Colors.RESET);
             }
             System.out.println();
-            
+            // new in finally function
         } finally {
-            // TODO #4: Release CPU semaphore here
-            // Always release in finally block to prevent deadlocks!
+            SharedResources.cpuSemaphore.release();
         }
     }
     
@@ -173,9 +198,9 @@ class Process implements Runnable {
         bar.append("] ").append(progress).append("%");
         return bar.toString();
     }
-    
+    // new in runToCompletion fuction
     public void runToCompletion() {
-        // TODO: Similar synchronization needed here
+        SharedResources.cpuSemaphore.acquire();
         try {
             System.out.println(Colors.BRIGHT_CYAN + "  ⚡ " + Colors.BOLD + Colors.CYAN + name + 
                               Colors.RESET + Colors.BRIGHT_CYAN + " is the last process, running to completion" + 
@@ -194,6 +219,10 @@ class Process implements Runnable {
         } catch (InterruptedException e) {
             System.out.println(Colors.RED + "  ✗ " + name + " was interrupted." + Colors.RESET);
         }
+        //new in runToCompletion fuction
+        finally {   
+        SharedResources.cpuSemaphore.release(); 
+    }
     }
     
     public String getName() {
@@ -227,7 +256,7 @@ class Process implements Runnable {
 public class SchedulerSimulationSync {
     public static void main(String[] args) {
         // ⚠️ IMPORTANT: Put your student ID here
-        int studentID = 123456789;  // ← CHANGE THIS TO YOUR ACTUAL STUDENT ID
+        int studentID = 443050277;  // ← CHANGE THIS TO YOUR ACTUAL STUDENT ID
         
         Random random = new Random(studentID);
         
@@ -285,7 +314,7 @@ public class SchedulerSimulationSync {
                           Colors.RESET);
         System.out.println(Colors.BOLD + Colors.GREEN + "║" + Colors.RESET + 
                           Colors.BG_GREEN + Colors.WHITE + Colors.BOLD + 
-                          "                        ▶  SCHEDULER STARTING  ◀                               " + 
+                          "                        ▶️  SCHEDULER STARTING  ◀️                               " + 
                           Colors.RESET + Colors.BOLD + Colors.GREEN + "║" + Colors.RESET);
         System.out.println(Colors.BOLD + Colors.GREEN + 
                           "╚════════════════════════════════════════════════════════════════════════════════╝" + 
